@@ -72,4 +72,8 @@ private:
 
 	void init_sync_structures();
 
+	// loads a shader module from a spir-v file. returns false if it errors
+	bool load_shader_module(const char* filePaht, VkShaderModule* outShaderModule);
+
+	void init_pipelines();
 };

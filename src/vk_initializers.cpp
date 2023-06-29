@@ -7,7 +7,7 @@ VkCommandPoolCreateInfo vkinit::command_pool_create_info(uint32_t queueFamilyInd
 	info.pNext = nullptr;
 
 	info.queueFamilyIndex = queueFamilyIndex;
-	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	info.flags = flags;
 	return info;
 }
 
@@ -17,7 +17,7 @@ VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(VkCommandPool p
 	info.pNext = nullptr;
 
 	info.commandPool = pool;
-	info.commandBufferCount = 1;
-	info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	info.commandBufferCount = count;
+	info.level = level;
 	return info;
 }

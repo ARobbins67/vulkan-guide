@@ -11,6 +11,7 @@
 #include "VkBootstrap.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -55,6 +56,8 @@ void VulkanEngine::init()
 	init_framebuffers();
 	 
 	init_sync_structures();
+
+	//init_pipelines();
 
 	//everything went fine
 	_isInitialized = true;
@@ -123,13 +126,13 @@ void VulkanEngine::init_swapchain() {
 }
 
 void VulkanEngine::init_commands() {
-	// create a command pool for commands submitted to the graphics queue
-	// we also want the pool to allow for resetting of individual command buffers
+	//create a command pool for commands submitted to the graphics queue.
+	//we also want the pool to allow for resetting of individual command buffers
 	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-	
+
 	VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
 
-	// allocate the default command buffer that we will use for rendering
+	//allocate the default command buffer that we will use for rendering
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
 
 	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
@@ -227,6 +230,24 @@ void VulkanEngine::init_sync_structures() {
 	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore));
 }
 
+void VulkanEngine::init_pipelines() {
+	VkShaderModule triangleFragShader;
+	if (!load_shader_module("../../shaders/triangle.frag.spv", &triangleFragShader)) {
+		std::cout << "Error when building triangle fragment shader module" << std::endl;
+	}
+	else {
+		std::cout << "Triangle fragment shader successfully loaded!" << std::endl;
+	}
+
+	VkShaderModule triangleVertexShader;
+	if (!load_shader_module("../../shaders/triangle.vert.spv", &triangleVertexShader)) {
+		std::cout << "Error when building triangle vertex shader module" << std::endl;
+	}
+	else {
+		std::cout << "Triangle vertex shader successfully loaded" << std::endl;
+	}
+}
+
 void VulkanEngine::cleanup()
 {	
 	if (_isInitialized) {
@@ -239,7 +260,7 @@ void VulkanEngine::cleanup()
 		vkDestroyRenderPass(_device, _renderPass, nullptr);
 
 		//destroy swapchain resources
-		for (int i = 0; i < _swapchainImageViews.size(); i++) {
+		for (int i = 0; i < _framebuffers.size(); i++) {
 			vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
 
 			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
@@ -367,5 +388,47 @@ void VulkanEngine::run()
 
 		draw();
 	}
+}
+
+bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule) {
+	// open the file with cursor at the end
+	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+
+	if(!file.is_open())
+		return false;
+
+	// find size of file by looking up location of cursor.
+	// Because cursor is at end, it give size directly in bytes
+	size_t fileSize = (size_t)file.tellg();
+
+	//spirv expects the buffer to be on uint32, so 
+	// reserve an int vector big enough for entire file
+	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+
+	// put file cursor at beginning
+	file.seekg(0);
+
+	// load entire file into buffer
+	file.read((char*)buffer.data(), fileSize);
+
+	// now that file is loaded into buffer, we can close it
+	file.close();
+
+	// create new shader module, using buffer we loaded
+	VkShaderModuleCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.pNext = nullptr;
+
+	//codeSize has to be in bytes, so multiply ints in buffer by size of int
+	createInfo.codeSize = buffer.size() * sizeof(uint32_t);
+	createInfo.pCode = buffer.data();
+
+	// check that the creation goes well
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		return false;
+	}
+	*outShaderModule = shaderModule;
+	return true;
 }
 
