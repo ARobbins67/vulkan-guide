@@ -1,6 +1,8 @@
 //we will be using glsl version 4.5 syntax
 #version 450
 
+layout (location = 0) out vec3 outColor;
+
 void main()
 {
 	//const array of positions for the triangle
