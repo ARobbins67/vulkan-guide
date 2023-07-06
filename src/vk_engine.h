@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 #include <deque>
+#include <vk_mesh.h>
 
 class PipelineBuilder {
 public:
@@ -83,6 +84,11 @@ public:
 
 	DeletionQueue _mainDeletionQueue;
 
+	VmaAllocator _allocator; //vma lib allocator
+
+	VkPipeline _meshPipeline;
+	Mesh _triangleMesh;
+
 	//initializes everything in the engine
 	void init();
 
@@ -112,4 +118,8 @@ private:
 	void init_pipelines();
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
+
+	void load_meshes();
+
+	void upload_mesh(Mesh& mesh);
 };
