@@ -8,6 +8,12 @@
 #include <functional>
 #include <deque>
 #include <vk_mesh.h>
+#include <glm/glm.hpp>
+
+struct MeshPushConstants {
+	glm::vec4 data;
+	glm::mat4 render_matrix;
+};
 
 class PipelineBuilder {
 public:
@@ -75,7 +81,8 @@ public:
 	std::vector<VkImage> _swapchainImages;
 	std::vector<VkImageView> _swapchainImageViews;
 
-	VkPipelineLayout _trianglePipelineLayout;
+	//VkPipelineLayout _trianglePipelineLayout;
+	VkPipelineLayout _meshPipelineLayout;
 
 	VkPipeline _trianglePipeline;
 	VkPipeline _redTrianglePipeline;
