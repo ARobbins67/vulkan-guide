@@ -1,9 +1,11 @@
+#pragma once
+
 #include <vk_mesh.h>
 
 VertexInputDescription Vertex::get_vertex_description() {
    VertexInputDescription description;
 
-   //we will have just 1 vertex buffer binding, with a per-vertex rate
+   // just 1 vertex buffer binding, with per-vertex rate
    VkVertexInputBindingDescription mainBinding = {};
    mainBinding.binding = 0;
    mainBinding.stride = sizeof(Vertex);
@@ -11,21 +13,21 @@ VertexInputDescription Vertex::get_vertex_description() {
 
    description.bindings.push_back(mainBinding);
 
-   //Position will be stored at location 0
+   // Position will be stored at location 0
    VkVertexInputAttributeDescription positionAttribute = {};
    positionAttribute.binding = 0;
    positionAttribute.location = 0;
    positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
    positionAttribute.offset = offsetof(Vertex, position);
 
-   //Normals will be stored at location 1
+   // Normal will be stored at location 1
    VkVertexInputAttributeDescription normalAttribute = {};
    normalAttribute.binding = 0;
    normalAttribute.location = 1;
    normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
    normalAttribute.offset = offsetof(Vertex, normal);
 
-   //Color will be stored at location 2
+   // Position will be stored at location 0
    VkVertexInputAttributeDescription colorAttribute = {};
    colorAttribute.binding = 0;
    colorAttribute.location = 2;

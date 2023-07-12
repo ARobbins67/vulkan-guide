@@ -17,6 +17,7 @@
 
 constexpr bool bUseValidationLayers = true;
 
+#pragma region VK_CHECK
 //we want to immediately abort when there is an error. In normal engines this would give an error message to the user, or perform a dump of state.
 using namespace std;
 #define VK_CHECK(x)                                                 \
@@ -29,7 +30,7 @@ using namespace std;
 			abort();                                                \
 		}                                                           \
 	} while (0)
-
+#pragma endregion
 
 void VulkanEngine::init()
 {
@@ -125,16 +126,18 @@ void VulkanEngine::draw()
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	//once we start adding rendering commands, they will go here
-	if (_selectedShader == 0)
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
-	else
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _redTrianglePipeline);
-	
-	vkCmdDraw(cmd, 3, 1, 0, 0);
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _meshPipeline);
+
+	//bind the mesh vertex buffer with offset 0
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_triangleMesh._vertexBuffer._buffer, &offset);
+
+	// we can now draw the mesh
+	vkCmdDraw(cmd, _triangleMesh._vertices.size(), 1, 0, 0);
 
 	//finalize the render pass
 	vkCmdEndRenderPass(cmd);
+
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 
@@ -495,7 +498,7 @@ void VulkanEngine::init_pipelines() {
 	_redTrianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
 
 	//destroy all shader modules, outside of the queue
-	vkDestroyShaderModule(_device, redTriangleVertShader, nullptr);
+	/*vkDestroyShaderModule(_device, redTriangleVertShader, nullptr);
 	vkDestroyShaderModule(_device, redTriangleFragShader, nullptr);
 	vkDestroyShaderModule(_device, triangleFragShader, nullptr);
 	vkDestroyShaderModule(_device, triangleVertShader, nullptr);
@@ -506,6 +509,55 @@ void VulkanEngine::init_pipelines() {
 		vkDestroyPipeline(_device, _trianglePipeline, nullptr);
 
 		//destroy pipeline layout that they use
+		vkDestroyPipelineLayout(_device, _trianglePipelineLayout, nullptr);
+	});*/
+
+	// build the mesh pipeline
+	VertexInputDescription vertexDescription = Vertex::get_vertex_description();
+
+	//connect pipeline builder vertex input info to the one we get from Vertex
+	pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = vertexDescription.attributes.data();
+	pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = vertexDescription.attributes.size();
+
+	pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = vertexDescription.bindings.data();
+	pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = vertexDescription.bindings.size();
+
+	//clear the shader stages for the builder
+	pipelineBuilder._shaderStages.clear();
+
+	//compile mesh vertex shader
+	VkShaderModule meshVertShader;
+	if (!load_shader_module("../../shaders/tri_mesh.vert.spv", &meshVertShader)) {
+		std::cout << "Error when building the triangle vertex shader module" << std::endl;
+	}
+	else {
+		std::cout << "Red triangle vertex shader successfully loaded" << std::endl;
+	}
+
+	// add the other shaders
+	pipelineBuilder._shaderStages.push_back(
+		vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
+
+	//make sure triangleFragShader is holding the compiled colored_triangle.frag
+	pipelineBuilder._shaderStages.push_back(
+		vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, triangleFragShader));
+
+	//build the mesh triangle pipeline
+	_meshPipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
+
+	//deleting all of the Vulkan shaders
+	vkDestroyShaderModule(_device, meshVertShader, nullptr);
+	vkDestroyShaderModule(_device, redTriangleVertShader, nullptr);
+	vkDestroyShaderModule(_device, redTriangleFragShader, nullptr);
+	vkDestroyShaderModule(_device, triangleFragShader, nullptr);
+	vkDestroyShaderModule(_device, triangleVertShader, nullptr);
+
+	// adding the pipeline to the deletion queue
+	_mainDeletionQueue.push_function([=]() {
+		vkDestroyPipeline(_device, _redTrianglePipeline, nullptr);
+		vkDestroyPipeline(_device, _trianglePipeline, nullptr);
+		vkDestroyPipeline(_device, _meshPipeline, nullptr);
+
 		vkDestroyPipelineLayout(_device, _trianglePipelineLayout, nullptr);
 	});
 }
