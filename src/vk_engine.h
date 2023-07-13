@@ -9,6 +9,13 @@
 #include <deque>
 #include <vk_mesh.h>
 
+#include <glm/glm.hpp>
+
+struct MeshPushConstants {
+	glm::vec4 data;
+	glm::mat4 render_matrix;
+};
+
 class PipelineBuilder {
 public:
 	std::vector<VkPipelineShaderStageCreateInfo> _shaderStages;
@@ -88,6 +95,8 @@ public:
 	DeletionQueue _mainDeletionQueue;
 
 	VmaAllocator _allocator; // vma lib allocator 
+
+	VkPipelineLayout _meshPipelineLayout;
 
 	//initializes everything in the engine
 	void init();
