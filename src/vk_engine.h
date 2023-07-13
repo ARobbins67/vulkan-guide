@@ -27,6 +27,7 @@ public:
 	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
 	VkPipelineMultisampleStateCreateInfo _multisampling;
 	VkPipelineLayout _pipelineLayout;
+	VkPipelineDepthStencilStateCreateInfo _depthStencil;
 
 	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 };
@@ -98,6 +99,12 @@ public:
 	VmaAllocator _allocator; // vma lib allocator 
 
 	VkPipelineLayout _meshPipelineLayout;
+
+	VkImageView _depthImageView;
+	AllocatedImage _depthImage;
+
+	//format for the depth image
+	VkFormat _depthFormat;
 
 	//initializes everything in the engine
 	void init();
