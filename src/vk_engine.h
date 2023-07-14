@@ -11,6 +11,14 @@
 
 #include <glm/glm.hpp>
 
+struct FrameData {
+	VkSemaphore _presentSemaphore, _renderSemaphore;
+	VkFence _renderFence;
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+};
+
 struct MeshPushConstants {
 	glm::vec4 data;
 	glm::mat4 render_matrix;
@@ -49,6 +57,9 @@ struct DeletionQueue {
 	}
 };
 
+//number of frmames to overlap when rendering
+constexpr unsigned int FRAME_OVERLAP = 2;
+
 class VulkanEngine {
 public:
 
@@ -64,14 +75,8 @@ public:
 	VkPhysicalDevice _chosenGPU;
 	VkDevice _device;
 
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
-
 	VkQueue _graphicsQueue;
 	uint32_t _graphicsQueueFamily;
-
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
 
 	VkRenderPass _renderPass;
 
@@ -105,6 +110,12 @@ public:
 
 	//format for the depth image
 	VkFormat _depthFormat;
+
+	//frame storage
+	FrameData _frames[FRAME_OVERLAP];
+
+	//getter for the current frame we are rendering to right now
+	FrameData& get_current_frame();
 
 	//initializes everything in the engine
 	void init();
