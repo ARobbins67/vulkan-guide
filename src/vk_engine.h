@@ -8,26 +8,21 @@
 #include <functional>
 #include <deque>
 #include <vk_mesh.h>
-
 #include <glm/glm.hpp>
+#include <unordered_map>
+#include <string>
 
-struct GPUCameraData {
-	glm::mat4 view;
-	glm::mat4 proj;
-	glm::mat4 viewProj;
+struct Material {
+	VkPipeline pipeline;
+	VkPipelineLayout pipelineLayout;
 };
 
-struct FrameData {
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
+struct RenderObject {
+	Mesh* mesh;
 
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
+	Material* material;
 
-	//buffer that holds a single GPUCameraData to use when rendering
-	AllocatedBuffer cameraBuffer;
-
-	VkDescriptorSet globalDescriptor;
+	glm::mat4 transformMatrix;
 };
 
 struct MeshPushConstants {
@@ -68,9 +63,6 @@ struct DeletionQueue {
 	}
 };
 
-//number of frmames to overlap when rendering
-constexpr unsigned int FRAME_OVERLAP = 2;
-
 class VulkanEngine {
 public:
 
@@ -86,8 +78,14 @@ public:
 	VkPhysicalDevice _chosenGPU;
 	VkDevice _device;
 
+	VkSemaphore _presentSemaphore, _renderSemaphore;
+	VkFence _renderFence;
+
 	VkQueue _graphicsQueue;
 	uint32_t _graphicsQueueFamily;
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
 
 	VkRenderPass _renderPass;
 
@@ -122,11 +120,23 @@ public:
 	//format for the depth image
 	VkFormat _depthFormat;
 
-	//frame storage
-	FrameData _frames[FRAME_OVERLAP];
+	//default array of renderable objects
+	std::vector<RenderObject> _renderables;
 
-	//getter for the current frame we are rendering to right now
-	FrameData& get_current_frame();
+	std::unordered_map<std::string,Material> _materials;
+	std::unordered_map<std::string,Mesh> _meshes;
+
+	//create material and add it to the map
+	Material* create_material(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name);
+
+	//returns nullptr if it can't be found
+	Material* get_material(const std::string& name);
+
+	//returns nullptr if it can't be found
+	Mesh* get_mesh(const std::string& name);
+
+	//our draw function
+	void draw_objects(VkCommandBuffer vmd, RenderObject* first, int count);
 
 	//initializes everything in the engine
 	void init();
@@ -162,7 +172,5 @@ private:
 
 	void upload_mesh(Mesh& mesh);
 
-	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-
-	void init_descriptors();
+	void init_scene();
 };
