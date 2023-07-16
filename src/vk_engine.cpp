@@ -509,8 +509,6 @@ void VulkanEngine::init_pipelines() {
 	//not using descriptor sets or other systems yet, so just use empty defaults
 	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::pipeline_layout_create_info();
 
-	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr, &_trianglePipelineLayout));
-
 	// build the stage-create-info for both vertex and fragment stages. This lets the pipeline know 
 	// the shader modules per stage
 	PipelineBuilder pipelineBuilder;
@@ -547,13 +545,10 @@ void VulkanEngine::init_pipelines() {
 	//a single blend attachment with no blending and writing to RGBA
 	pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
 
-	//use triangle layout we created
-	pipelineBuilder._pipelineLayout = _trianglePipelineLayout;
-
 	//default depthtesting
 	pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 	//finally build the pipeline
-	_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
+	//_trianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
 
 	//clear the shader stages for the builder
 	pipelineBuilder._shaderStages.clear();
@@ -564,24 +559,6 @@ void VulkanEngine::init_pipelines() {
 
 	pipelineBuilder._shaderStages.push_back(
 		vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, redTriangleFragShader));
-
-	//build the red triangle pipeline
-	_redTrianglePipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
-
-	//destroy all shader modules, outside of the queue
-	/*vkDestroyShaderModule(_device, redTriangleVertShader, nullptr);
-	vkDestroyShaderModule(_device, redTriangleFragShader, nullptr);
-	vkDestroyShaderModule(_device, triangleFragShader, nullptr);
-	vkDestroyShaderModule(_device, triangleVertShader, nullptr);
-
-	_mainDeletionQueue.push_function([=]() {
-		// destroy the 2 pipelines we've created
-		vkDestroyPipeline(_device, _redTrianglePipeline, nullptr);
-		vkDestroyPipeline(_device, _trianglePipeline, nullptr);
-
-		//destroy pipeline layout that they use
-		vkDestroyPipelineLayout(_device, _trianglePipelineLayout, nullptr);
-	});*/
 
 	// build the mesh pipeline
 	VertexInputDescription vertexDescription = Vertex::get_vertex_description();
@@ -646,11 +623,7 @@ void VulkanEngine::init_pipelines() {
 
 	// adding the pipeline to the deletion queue
 	_mainDeletionQueue.push_function([=]() {
-		vkDestroyPipeline(_device, _redTrianglePipeline, nullptr);
-		vkDestroyPipeline(_device, _trianglePipeline, nullptr);
 		vkDestroyPipeline(_device, _meshPipeline, nullptr);
-
-		vkDestroyPipelineLayout(_device, _trianglePipelineLayout, nullptr);
 		vkDestroyPipelineLayout(_device, _meshPipelineLayout, nullptr);
 	});
 }
@@ -749,6 +722,8 @@ VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass) {
 }
 
 void VulkanEngine::load_meshes() {
+	Mesh _triangleMesh, _monkeyMesh;
+
 	// make the array 3 vertices long
 	_triangleMesh._vertices.resize(3);
 

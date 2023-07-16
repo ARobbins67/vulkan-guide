@@ -96,23 +96,15 @@ public:
 	std::vector<VkFramebuffer> _framebuffers;
 	std::vector<VkImage> _swapchainImages;
 	std::vector<VkImageView> _swapchainImageViews;
-
-	VkPipelineLayout _trianglePipelineLayout;
-
-	VkPipeline _trianglePipeline;
-	VkPipeline _redTrianglePipeline;
 	
 	VkPipeline _meshPipeline;
-	Mesh _triangleMesh;
-	Mesh _monkeyMesh;
+	VkPipelineLayout _meshPipelineLayout;
 
 	int _selectedShader{ 0 };
 
 	DeletionQueue _mainDeletionQueue;
 
 	VmaAllocator _allocator; // vma lib allocator 
-
-	VkPipelineLayout _meshPipelineLayout;
 
 	VkImageView _depthImageView;
 	AllocatedImage _depthImage;
